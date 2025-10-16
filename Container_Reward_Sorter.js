@@ -6,7 +6,7 @@
 // @version      2025-10-16
 // @description  用于战舰世界军火库网页版的脚本，对补给箱中的战舰列表进行简易重新排序：未获得的在前，已获得的在后，方便玩家确认自己未获得和已获得的战舰。
 // @description:zh-CN  用于战舰世界军火库网页版的脚本，对补给箱中的战舰列表进行简易重新排序：未获得的在前，已获得的在后，方便玩家确认自己未获得和已获得的战舰。
-// @description:en  Sort the battleship reward in containers: unobtained ones first, acquired ones last;
+// @description:en  Sort the warships in containers: unobtained ones first, acquired ones last;
 // @author       shiraha
 // @match        https://armory.worldofwarships.asia/*
 // @match        https://armory.worldofwarships.com/*
