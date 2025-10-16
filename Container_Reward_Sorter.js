@@ -13,6 +13,7 @@
 // @match        https://armory.worldofwarships.eu/*
 // @icon         https://wows-web-static.wgcdn.co/metashop/1a69ae8c/favicon.png
 // @grant        none
+// @license      MIT
 // ==/UserScript==
 
 (function() {
