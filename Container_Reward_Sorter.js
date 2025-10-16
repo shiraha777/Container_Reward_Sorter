@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         重新排序补给箱中的战舰
+// @name:zh-CN   重新排序补给箱中的战舰
 // @name:en      Container Reward Sorter
 // @namespace    https://github.com/shiraha777/Container_Reward_Sorter
 // @version      2025-10-16
 // @description  对补给箱中的战舰进行分类排序：未获得的在前，已获得的在后；
+// @description:zh-CN  对补给箱中的战舰进行分类排序：未获得的在前，已获得的在后；
 // @description:en  Sort the battleship reward in containers: unobtained ones first, acquired ones last;
 // @author       shiraha
 // @match        https://armory.worldofwarships.asia/*
