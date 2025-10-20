@@ -11,6 +11,7 @@
 // @match        https://armory.worldofwarships.asia/*
 // @match        https://armory.worldofwarships.com/*
 // @match        https://armory.worldofwarships.eu/*
+// @match        https://armory.wowsgame.cn/*
 // @icon         https://wows-web-static.wgcdn.co/metashop/1a69ae8c/favicon.png
 // @grant        none
 // @license      MIT
