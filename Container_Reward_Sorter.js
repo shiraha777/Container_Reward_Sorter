@@ -21,6 +21,36 @@
     'use strict';
 
     let sorted = false;
+
+    // 稀有度排序顺序：common < uncommon < rare < epic < legendary
+    const rarityOrder = {
+        'we-card__rarity-common': 1,
+        'we-card__rarity-uncommon': 2,
+        'we-card__rarity-rare': 3,
+        'we-card__rarity-epic': 4,
+        'we-card__rarity-legendary': 5
+    };
+
+    // 控制稀有度排序方向：'asc' 从低到高，'desc' 从高到低
+    let raritySortOrder = 'desc';
+
+    function getRarityValue(item) {
+        for (let cls of Object.keys(rarityOrder)) {
+            if (item.querySelector(`.${cls}`)) {
+                return rarityOrder[cls];
+            }
+        }
+        return 0; // 默认值
+    }
+    //按指定的稀有度顺序排序
+    function sortByRarity(items) {
+        return items.sort((a, b) => {
+            const ra = getRarityValue(a);
+            const rb = getRarityValue(b);
+            return raritySortOrder === 'asc' ? ra - rb : rb - ra;
+        });
+    }
+
     function sortLootboxItems() {
         console.log('checking...');
         const container = document.querySelector('.AutoDescription_items.AutoDescription_grid.AutoDescription_isLoaded');
@@ -46,9 +76,13 @@
                 }
             });
 
-            // 重新插入：先未获得，再已获得
-            notOwned.forEach(item => groupDiv.appendChild(item));
-            owned.forEach(item => groupDiv.appendChild(item));
+            // 按稀有度排序
+            const notOwnedSorted = sortByRarity(notOwned);
+            const ownedSorted = sortByRarity(owned);
+
+            // 重新插入：先未获得，再已获得，船只按默认顺序排序
+            notOwnedSorted.forEach(item => groupDiv.appendChild(item));
+            ownedSorted.forEach(item => groupDiv.appendChild(item));
         });
         console.log('sorted!')
     }
