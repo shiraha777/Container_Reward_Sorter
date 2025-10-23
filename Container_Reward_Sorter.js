@@ -47,6 +47,7 @@
     };
 
     // 控制稀有度排序方向：'asc' 从低到高，'desc' 从高到低
+    let tierSortOrder = 'desc';
     let raritySortOrder = 'desc';
 
     function getRarityValue(item) {
@@ -57,16 +58,26 @@
         }
         return 0; // 默认值
     }
-    //按指定的稀有度顺序排序
-    function sortByRarity(items) {
+
+    function getTierValue(item) {
+        const tierAttr = item.getAttribute('data-tier');
+        return tierAttr ? parseInt(tierAttr, 10) : 0;
+    }
+
+    // 综合排序：先按等级，再按稀有度
+    function sortByTierAndRarity(items) {
         return items.sort((a, b) => {
+            const ta = getTierValue(a);
+            const tb = getTierValue(b);
+            if (ta !== tb) {
+                return tierSortOrder === 'asc' ? ta - tb : tb - ta;
+            }
             const ra = getRarityValue(a);
             const rb = getRarityValue(b);
             return raritySortOrder === 'asc' ? ra - rb : rb - ra;
         });
     }
 
-    //执行排序
     function sortLootboxItems() {
         console.log('checking...');
         const container = document.querySelector('.AutoDescription_items.AutoDescription_grid.AutoDescription_isLoaded');
@@ -84,7 +95,7 @@
             const notOwned = items.filter(item => !item.querySelector('.we-card__inventory'));
             const owned = items.filter(item => item.querySelector('.we-card__inventory'));
 
-            console.log("doing sort...")
+            console.log("doing sort...");
             // 清空 groupDiv 中除标题外的内容
             Array.from(groupDiv.children).forEach(child => {
                 if (child !== title) {
@@ -92,15 +103,15 @@
                 }
             });
 
-            // 按稀有度排序
-            const notOwnedSorted = sortByRarity(notOwned);
-            const ownedSorted = sortByRarity(owned);
+            // 先按等级，再按稀有度
+            const notOwnedSorted = sortByTierAndRarity(notOwned);
+            const ownedSorted = sortByTierAndRarity(owned);
 
             // 重新插入：先未获得，再已获得，船只按默认顺序排序
             notOwnedSorted.forEach(item => groupDiv.appendChild(item));
             ownedSorted.forEach(item => groupDiv.appendChild(item));
         });
-        console.log('sorted!')
+        console.log('sorted!');
     }
 
     // 为每个战舰打上 data-tier 属性
@@ -146,10 +157,13 @@
             sorted = false;
         }
 
-        // 绑定 input 事件（只绑定一次）
+        // 绑定 input 事件
         const inputEl = document.querySelector('.SearchInput_input');
         if (inputEl && !inputEl.dataset.sortBound) {
-            const debouncedSort = debounce(sortLootboxItems, 300); // 300ms 防抖
+            const debouncedSort = debounce(() => {
+                assignTierData();
+                sortLootboxItems();
+            }, 300); // 300ms 防抖
             inputEl.addEventListener('input', () => {
                 console.log('SearchInput_input value changed');
                 debouncedSort();
