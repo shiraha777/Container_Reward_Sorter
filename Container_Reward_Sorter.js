@@ -22,7 +22,22 @@
 
     let sorted = false;
 
-    // 稀有度排序顺序：common < uncommon < rare < epic < legendary
+    // 等级罗马数字到整数数字的映射（仅限1~11）
+    const romanToArabic = {
+        'I': 1,
+        'II': 2,
+        'III': 3,
+        'IV': 4,
+        'V': 5,
+        'VI': 6,
+        'VII': 7,
+        'VIII': 8,
+        'IX': 9,
+        'X': 10,
+        '★': 11
+    };
+
+    // 稀有度到整数数字的映射，排序顺序：common < uncommon < rare < epic < legendary
     const rarityOrder = {
         'we-card__rarity-common': 1,
         'we-card__rarity-uncommon': 2,
@@ -51,6 +66,7 @@
         });
     }
 
+    //执行排序
     function sortLootboxItems() {
         console.log('checking...');
         const container = document.querySelector('.AutoDescription_items.AutoDescription_grid.AutoDescription_isLoaded');
@@ -87,6 +103,24 @@
         console.log('sorted!')
     }
 
+    // 为每个战舰打上 data-tier 属性
+    function assignTierData() {
+        document.querySelectorAll('.LootboxRewardItemCard_item.AutoDescription_gridItem').forEach(card => {
+            const span = card.querySelector('span');
+            if (!span) return;
+
+            const text = span.textContent.trim();
+            const match = text.match(/^(★|X|IX|IV|V?I{1,3}|VI{1,3}|VII{1,3}|VIII)\b/);
+            if (!match) return;
+
+            const roman = match[1];
+            const tier = romanToArabic[roman];
+            if (!tier) return;
+
+            card.setAttribute('data-tier', tier);
+        });
+    }
+
     // 操作防抖，避免在搜索框输入时连续更新页面导致性能问题
     function debounce(fn, delay) {
         let timer = null;
@@ -100,7 +134,11 @@
     const observer = new MutationObserver(() => {
         const target = document.querySelector('.AutoDescription_items.AutoDescription_grid.AutoDescription_isLoaded');
         if (target && !sorted) {
+            // 先打上等级标签，方便后续排序
+            assignTierData();
+            // 执行排序
             sortLootboxItems();
+            // 排序完毕，打上标记防止重复操作
             sorted = true;
         } else if (!target && sorted) {
             // 当元素消失时，重置 sorted
