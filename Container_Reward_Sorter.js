@@ -3,7 +3,7 @@
 // @name:zh-CN   重新排序补给箱中的战舰
 // @name:en      Container Reward Sorter
 // @namespace    https://github.com/shiraha777/Container_Reward_Sorter
-// @version      2025-10-20
+// @version      2025-10-23
 // @description  用于战舰世界军火库网页版的脚本，对补给箱中的战舰列表进行简易重新排序：未获得的在前，已获得的在后，方便玩家确认自己未获得和已获得的战舰。
 // @description:zh-CN  用于战舰世界军火库网页版的脚本，对补给箱中的战舰列表进行简易重新排序：未获得的在前，已获得的在后，方便玩家确认自己未获得和已获得的战舰。
 // @description:en  Sort the warships in containers: unobtained ones first, acquired ones last;
@@ -53,7 +53,16 @@
         console.log('sorted!')
     }
 
-    // 使用 MutationObserver 监听元素加载和移除
+    // 操作防抖，避免在搜索框输入时连续更新页面导致性能问题
+    function debounce(fn, delay) {
+        let timer = null;
+        return function(...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), delay);
+        };
+    }
+
+    // 使用 MutationObserver 监听元素加载和移除，监听搜索框输入事件
     const observer = new MutationObserver(() => {
         const target = document.querySelector('.AutoDescription_items.AutoDescription_grid.AutoDescription_isLoaded');
         if (target && !sorted) {
@@ -63,6 +72,18 @@
             // 当元素消失时，重置 sorted
             console.log('target disappeared, reset sorted = false');
             sorted = false;
+        }
+
+        // 绑定 input 事件（只绑定一次）
+        const inputEl = document.querySelector('.SearchInput_input');
+        if (inputEl && !inputEl.dataset.sortBound) {
+            const debouncedSort = debounce(sortLootboxItems, 300); // 300ms 防抖
+            inputEl.addEventListener('input', () => {
+                console.log('SearchInput_input value changed');
+                debouncedSort();
+            });
+            inputEl.dataset.sortBound = 'true';
+            console.log('input listener with debounce attached');
         }
     });
 
