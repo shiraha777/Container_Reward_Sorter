@@ -20,58 +20,85 @@
 
 (function() {
     'use strict';
-    // 排序标识符
+
     let sorted = false;
-    // 初始化语言环境
-    const isZh = navigator.language.toLowerCase().startsWith("zh");
-    console.log("isZh = " + isZh);
-    // 设置按钮语言
-    const states = {
-        sortByInventory: isZh
-        ? ["显示全部", "仅显示已获得", "仅显示未获得"]
-        : ["Show All", "Owned Only", "Unowned Only"],
-
-        sortByTier: isZh
-        ? ["等级降序", "等级升序", "等级默认"]
-        : ["Tier Desc", "Tier Asc", "Tier Default"],
-
-        sortByRarity: isZh
-        ? ["稀有度降序", "稀有度升序", "稀有度默认"]
-        : ["Rarity Desc", "Rarity Asc", "Rarity Default"],
+    // 国际化字典
+    const i18n = {
+        zh: {
+            sortByInventory: ["显示全部", "仅显示未获得", "仅显示已获得"],
+            sortByTier: ["等级降序", "等级升序"],
+            sortByRarity: ["稀有度降序", "稀有度升序"],
+        },
+        en: {
+            sortByInventory: ["Show All", "Unowned Only", "Owned Only"],
+            sortByTier: ["Tier Desc", "Tier Asc"],
+            sortByRarity: ["Rarity Desc", "Rarity Asc"],
+        },
+        ja: {
+            sortByInventory: ["すべて表示", "未取得のみ", "取得済みのみ"],
+            sortByTier: ["ランク降順", "ランク昇順"],
+            sortByRarity: ["レア度降順", "レア度昇順"],
+        },
     };
-    // 定义按钮样式和属性
+
+    // 获取浏览器语言前缀（如 zh-CN → zh）
+    const lang = navigator.language.toLowerCase().split("-")[0];
+    const states = i18n[lang] || i18n.en;
+
+    // 插入的HTML
     const delimiterHTML = `
         <span class="BundlePageHeader_preBundleTitle">　</span>
-    `;
+        `;
     const extraHTML = `
         <span class="AutoDescription_group" data-modify-btn="sortByInventory"></span>
         <span class="AutoDescription_group" data-modify-btn="sortByTier"></span>
         <span class="AutoDescription_group" data-modify-btn="exchange">⇄</span>
         <span class="AutoDescription_group" data-modify-btn="sortByRarity"></span>
     `;
-    // 初始化按钮文本
+
+    // 工具函数
     function initButtonText(btn, key) {
-        const saved = GM_getValue(key, states[key][0]);
-        btn.textContent = saved;
+        const idx = GM_getValue(key + "_idx", 0);
+        btn.textContent = states[key][idx];
     }
 
-    // 根据保存的顺序调整 sortByTier 和 sortByRarity 的位置
+    function bindButton(btn, key) {
+        if (!btn) return;
+        initButtonText(btn, key);
+        btn.addEventListener("click", () => {
+            let idx = GM_getValue(key + "_idx", 0);
+            idx = (idx + 1) % states[key].length;
+            GM_setValue(key + "_idx", idx);
+            btn.textContent = states[key][idx];
+            console.log(`${key} 切换为:`, states[key][idx]);
+            sortLootboxItems();
+        });
+    }
+
+    // 根据保存的顺序调整 sortByTier 和 sortByRarity 的位置，exchange 始终居中
     function applyOrder(container) {
-        const order = GM_getValue("exchangeOrder", ["sortByTier", "sortByRarity"]);
         const tier = container.querySelector('[data-modify-btn="sortByTier"]');
         const rarity = container.querySelector('[data-modify-btn="sortByRarity"]');
         const exchange = container.querySelector('[data-modify-btn="exchange"]');
+
+        // 获取按钮顺序
+        const order = GM_getValue("exchangeOrder", ["sortByTier", "sortByRarity"]);
+        // 先移除三个按钮，避免插入顺序混乱
+        container.removeChild(tier);
+        container.removeChild(rarity);
+        container.removeChild(exchange);
 
         if (tier && rarity && exchange) {
             const first = order[0] === "sortByTier" ? tier : rarity;
             const second = order[1] === "sortByTier" ? tier : rarity;
 
-            container.insertBefore(first, exchange);
-            container.insertBefore(exchange, second);
-            container.insertBefore(second, exchange.nextSibling);
+            container.appendChild(first);
+            container.appendChild(exchange);
+            container.appendChild(second);
         }
     }
 
+    // 插入按钮主逻辑
     function insertButtons() {
         let container = document.querySelector(".AutoDescription_groupsTab");
         let delimiter = true;
@@ -109,43 +136,13 @@
 
     function bindEvents(container) {
         // sortByInventory
-        const sortBtn = container.querySelector('[data-modify-btn="sortByInventory"]');
-        if (sortBtn) {
-            initButtonText(sortBtn, "sortByInventory");
-            sortBtn.addEventListener("click", () => {
-                let idx = states.sortByInventory.indexOf(sortBtn.textContent);
-                idx = (idx + 1) % states.sortByInventory.length;
-                sortBtn.textContent = states.sortByInventory[idx];
-                GM_setValue("sortByInventory", states.sortByInventory[idx]);
-                console.log("sortByInventory 切换为:", states.sortByInventory[idx]);
-            });
-        }
+        bindButton(container.querySelector('[data-modify-btn="sortByInventory"]'), "sortByInventory");
 
         // sortByTier
-        const tierBtn = container.querySelector('[data-modify-btn="sortByTier"]');
-        if (tierBtn) {
-            initButtonText(tierBtn, "sortByTier");
-            tierBtn.addEventListener("click", () => {
-                let idx = states.sortByTier.indexOf(tierBtn.textContent);
-                idx = (idx + 1) % states.sortByTier.length;
-                tierBtn.textContent = states.sortByTier[idx];
-                GM_setValue("sortByTier", states.sortByTier[idx]);
-                console.log("sortByTier 切换为:", states.sortByTier[idx]);
-            });
-        }
+        bindButton(container.querySelector('[data-modify-btn="sortByTier"]'), "sortByTier");
 
         // sortByRarity
-        const rarityBtn = container.querySelector('[data-modify-btn="sortByRarity"]');
-        if (rarityBtn) {
-            initButtonText(rarityBtn, "sortByRarity");
-            rarityBtn.addEventListener("click", () => {
-                let idx = states.sortByRarity.indexOf(rarityBtn.textContent);
-                idx = (idx + 1) % states.sortByRarity.length;
-                rarityBtn.textContent = states.sortByRarity[idx];
-                GM_setValue("sortByRarity", states.sortByRarity[idx]);
-                console.log("sortByRarity 切换为:", states.sortByRarity[idx]);
-            });
-        }
+        bindButton(container.querySelector('[data-modify-btn="sortByRarity"]'), "sortByRarity");
 
         // exchange
         const exchangeBtn = container.querySelector('[data-modify-btn="exchange"]');
@@ -157,24 +154,24 @@
 
                 if (tier && rarity && exchange) {
                     const order = [];
-
-                    // 判断当前顺序
                     const tierBeforeRarity = tier.compareDocumentPosition(rarity) & Node.DOCUMENT_POSITION_FOLLOWING;
 
                     if (tierBeforeRarity) {
                         // 当前是 tier → exchange → rarity，改为 rarity → exchange → tier
-                        container.insertBefore(rarity, tier); // rarity 放到 tier 前
-                        container.insertBefore(exchange, tier); // exchange 放到 tier 前（即中间）
+                        container.insertBefore(rarity, tier);
+                        container.insertBefore(exchange, tier);
                         order.push("sortByRarity", "sortByTier");
                     } else {
                         // 当前是 rarity → exchange → tier，改为 tier → exchange → rarity
-                        container.insertBefore(tier, rarity); // tier 放到 rarity 前
-                        container.insertBefore(exchange, rarity); // exchange 放到 rarity 前（即中间）
+                        container.insertBefore(tier, rarity);
+                        container.insertBefore(exchange, rarity);
                         order.push("sortByTier", "sortByRarity");
                     }
 
                     GM_setValue("exchangeOrder", order);
                     console.log("exchange: 已交换 sortByTier 与 sortByRarity，当前顺序:", order);
+                    // 执行重排
+                    sortLootboxItems();
                 }
             });
         }
@@ -204,7 +201,7 @@
         'we-card__rarity-legendary': 5
     };
 
-    // 控制稀有度排序方向：'asc' 从低到高，'desc' 从高到低
+    // 控制稀有度排序方向：'asc' 从低到高，'desc' 从高到低（默认）
     let tierSortOrder = 'desc';
     let raritySortOrder = 'desc';
 
@@ -235,14 +232,24 @@
             return raritySortOrder === 'asc' ? ra - rb : rb - ra;
         });
     }
+    // 综合排序：先按稀有度，再按等级
+    function sortByRarityAndTier(items) {
+        return items.sort((a, b) => {
+            const ra = getRarityValue(a);
+            const rb = getRarityValue(b);
+            if (ra !== rb) {
+                return raritySortOrder === 'asc' ? ra - rb : rb - ra;
+            }
+            const ta = getTierValue(a);
+            const tb = getTierValue(b);
+            return tierSortOrder === 'asc' ? ta - tb : tb - ta;
+        });
+    }
 
     function sortLootboxItems() {
         console.log('checking...');
         const container = document.querySelector('.AutoDescription_items.AutoDescription_grid.AutoDescription_isLoaded');
         if (!container) return;
-
-        // 添加更多筛选按钮
-        insertButtons();
 
         console.log('start sort!');
         // 遍历 container 下的每个子<div>
@@ -264,13 +271,52 @@
                 }
             });
 
-            // 先按等级，再按稀有度
-            const notOwnedSorted = sortByTierAndRarity(notOwned);
-            const ownedSorted = sortByTierAndRarity(owned);
+            // 获取按钮顺序和状态
+            const order = GM_getValue("exchangeOrder", ["sortByTier", "sortByRarity"]);
+            const inventoryIdx = GM_getValue("sortByInventory_idx", 0);
+            const sortByTierIdx = GM_getValue("sortByTier_idx", 0);
+            const sortByRarityIdx = GM_getValue("sortByRarity_idx", 0);
 
-            // 重新插入：先未获得，再已获得
+            if (sortByTierIdx === 1) {
+                tierSortOrder = 'asc';
+            } else {
+                tierSortOrder = 'desc';
+            }
+            if (sortByRarityIdx === 1) {
+                raritySortOrder = 'asc';
+            } else {
+                raritySortOrder = 'desc';
+            }
+
+            // 先按等级，再按稀有度
+            let notOwnedSorted = sortByTierAndRarity(notOwned);
+            let ownedSorted = sortByTierAndRarity(owned);
+
+            if (order[0] === "sortByRarity"){
+                // 先按稀有度，再按等级
+                notOwnedSorted = sortByRarityAndTier(notOwned);
+                ownedSorted = sortByRarityAndTier(owned);
+            }
+
+            // 重新插入：先未获得，再已获得，船只按默认顺序排序
             notOwnedSorted.forEach(item => groupDiv.appendChild(item));
             ownedSorted.forEach(item => groupDiv.appendChild(item));
+
+            if (inventoryIdx === 1) {
+                // 仅显示未获得
+                notOwnedSorted.forEach(item => {item.style.removeProperty('display')});
+                ownedSorted.forEach(item => {item.style.display = 'none'});
+            } else if (inventoryIdx === 2) {
+                // 仅显示已获得
+                notOwnedSorted.forEach(item => {item.style.display = 'none'});
+                ownedSorted.forEach(item => {item.style.removeProperty('display')});
+            } else {
+                // 显示全部（默认）
+                notOwnedSorted.forEach(item => {item.style.removeProperty('display')});
+                ownedSorted.forEach(item => {item.style.removeProperty('display')});
+            }
+
+
         });
         console.log('sorted!');
     }
@@ -306,6 +352,8 @@
     const observer = new MutationObserver(() => {
         const target = document.querySelector('.AutoDescription_items.AutoDescription_grid.AutoDescription_isLoaded');
         if (target && !sorted) {
+            // 添加按钮
+            insertButtons();
             // 先打上等级标签，方便后续排序
             assignTierData();
             // 执行排序
@@ -336,4 +384,3 @@
 
     observer.observe(document.body, { childList: true, subtree: true });
 })();
-
