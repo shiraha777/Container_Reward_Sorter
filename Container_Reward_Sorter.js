@@ -13,7 +13,8 @@
 // @match        https://armory.worldofwarships.eu/*
 // @match        https://armory.wowsgame.cn/*
 // @icon         https://wows-web-static.wgcdn.co/metashop/1a69ae8c/favicon.png
-// @grant        none
+// @grant        GM_setValue
+// @grant        GM_getValue
 // @license      MIT
 // ==/UserScript==
 
